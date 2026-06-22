@@ -208,7 +208,10 @@ build_device() {
     if [[ -f "$KERNEL_DIR/kptools-linux" && -f "$KERNEL_DIR/kpimg-android" ]]; then
         echo "--- Patching kernel Image with APatch ---"
         chmod +x "$KERNEL_DIR/kptools-linux"
-        "$KERNEL_DIR/kptools-linux" -p -i "$K_IMG" -k "$KERNEL_DIR/kpimg-android" -o "$K_IMG" -s "apatch12345"
+        if ! "$KERNEL_DIR/kptools-linux" -p -i "$K_IMG" -k "$KERNEL_DIR/kpimg-android" -o "$K_IMG" -s "apatch12345"; then
+            echo "--- ! Failed to patch kernel Image with APatch ! ---"
+            return 1
+        fi
         echo "--- APatch patched successfully ---"
     fi
 
