@@ -51,7 +51,10 @@ jobs:
       - name: Build kptools from KernelPatch master
         run: |
           git clone --depth=1 https://github.com/bmax121/KernelPatch.git ../KernelPatch
-          cd ../KernelPatch/tools
+          cd ../KernelPatch/kernel
+          export TARGET_COMPILE=placeholder
+          make hdr
+          cd ../tools
           make -j$(nproc)
           cp kptools "$GITHUB_WORKSPACE/kptools-linux"
           chmod +x "$GITHUB_WORKSPACE/kptools-linux"
