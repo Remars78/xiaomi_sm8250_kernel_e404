@@ -184,7 +184,7 @@ zipbuild() {
         ZIP_NAME="RE404-${DEVICE_NAME}-$(date "+%y%m%d-%H%M").zip"
     fi
 
-    zip -r9 "$OUT_DIR/$ZIP_NAME" META-INF tools Image dtbo.img dtb anykernel.sh
+    zip -r9 "$OUT_DIR/$ZIP_NAME" META-INF tools "${TARGET}"* anykernel.sh
     cd "$KERNEL_DIR"
 }
 
@@ -195,7 +195,7 @@ build_device() {
 
     echo "--- Building for $TARGET ---"
 
-    cp "$KERNEL_DIR/anykernel-${DEVICE}.sh" "$AK3_DIR/anykernel.sh"
+    cp "$KERNEL_DIR/anykernel.sh" "$AK3_DIR/anykernel.sh"
 
     rm -rf out/arch/arm64/boot
 
@@ -218,10 +218,10 @@ build_device() {
         echo "--- APatch patched successfully ---"
     fi
 
-    rm -f "$AK3_DIR/Image" "$AK3_DIR/dtbo.img" "$AK3_DIR/dtb"
-    cp "$K_IMG" "$AK3_DIR/Image"
-    cp "$K_DTBO" "$AK3_DIR/dtbo.img"
-    cp "$K_DTB" "$AK3_DIR/dtb"
+    rm -f "$AK3_DIR/${TARGET}-"*
+    cp "$K_IMG" "$AK3_DIR/${TARGET}-Image"
+    cp "$K_DTBO" "$AK3_DIR/${TARGET}-dtbo.img"
+    cp "$K_DTB" "$AK3_DIR/${TARGET}-dtb"
 
     zipbuild "$TARGET" "$DEVICE"
     ZIPS+=("$OUT_DIR/$ZIP_NAME")
