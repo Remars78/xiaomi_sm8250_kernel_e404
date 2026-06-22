@@ -51,7 +51,9 @@ jobs:
       - name: Build kptools from KernelPatch master
         run: |
           git clone --depth=1 https://github.com/bmax121/KernelPatch.git ../KernelPatch
-          cd ../KernelPatch/kernel
+          cd ../KernelPatch/tools
+          sed -i 's/if (info->version.major < 4 || (info->version.major == 4 \&\& info->version.minor < 20))/if (0)/' kallsym.c
+          cd ../kernel
           export TARGET_COMPILE=placeholder
           make hdr
           cd ../tools
