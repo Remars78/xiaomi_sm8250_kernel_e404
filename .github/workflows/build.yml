@@ -48,6 +48,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache-
 
+      - name: Download APatch tools for inline patching
+        run: |
+          curl -sLo kptools-linux "https://github.com/bmax121/KernelPatch/releases/download/0.13.1/kptools-linux"
+          curl -sLo kpimg-android "https://github.com/bmax121/KernelPatch/releases/download/0.13.1/kpimg-android"
+          chmod +x kptools-linux
+
       - name: Setup AnyKernel3
         run: |
           git clone https://github.com/osm0sis/AnyKernel3.git ../AnyKernel3

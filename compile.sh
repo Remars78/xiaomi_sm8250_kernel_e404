@@ -204,6 +204,14 @@ build_device() {
     compilebuild
 
     [[ -f "$K_IMG" && -f "$K_DTBO" && -f "$K_DTB" ]] || return 1
+
+    if [[ -f "$KERNEL_DIR/kptools-linux" && -f "$KERNEL_DIR/kpimg-android" ]]; then
+        echo "--- Patching kernel Image with APatch ---"
+        chmod +x "$KERNEL_DIR/kptools-linux"
+        "$KERNEL_DIR/kptools-linux" -p -i "$K_IMG" -k "$KERNEL_DIR/kpimg-android" -o "$K_IMG" -s "apatch12345"
+        echo "--- APatch patched successfully ---"
+    fi
+
     rm -f "$AK3_DIR/${TARGET}-"*
     cp "$K_IMG" "$AK3_DIR/${TARGET}-Image"
     cp "$K_DTBO" "$AK3_DIR/${TARGET}-dtbo.img"
