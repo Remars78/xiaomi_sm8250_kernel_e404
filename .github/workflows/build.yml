@@ -48,11 +48,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache-
 
-      - name: Download APatch tools for inline patching
+      - name: Build kptools from KernelPatch master
         run: |
-          curl -sLo kptools-linux "https://github.com/bmax121/KernelPatch/releases/download/0.13.1/kptools-linux"
+          git clone --depth=1 https://github.com/bmax121/KernelPatch.git ../KernelPatch
+          cd ../KernelPatch/tools
+          make -j$(nproc)
+          cp kptools "$GITHUB_WORKSPACE/kptools-linux"
+          chmod +x "$GITHUB_WORKSPACE/kptools-linux"
+
+      - name: Download APatch kpimg
+        run: |
           curl -sLo kpimg-android "https://github.com/bmax121/KernelPatch/releases/download/0.13.1/kpimg-android"
-          chmod +x kptools-linux
 
       - name: Setup AnyKernel3
         run: |
@@ -60,6 +66,7 @@ jobs:
 
       - name: Build Kernel
         run: |
+          set -e
           export CCACHE_DIR="$PWD/../ccache/.kernel-bpf"
           ccache -M 5G
           bash compile.sh alioth neutron
