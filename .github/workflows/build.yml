@@ -1,0 +1,65 @@
+name: Build Kernel (alioth)
+
+on:
+  workflow_dispatch: # Позволяет запускать сборку вручную через вкладку Actions на GitHub
+
+jobs:
+  build:
+    name: Build Kernel
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout Kernel Source
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential bc bison flex libssl-dev libelf-dev \
+            ccache zip unzip curl git make clang lld
+
+      - name: Cache Neutron Clang
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: ../toolchains/neutron-clang
+          key: ${{ runner.os }}-neutron-clang-v1
+
+      - name: Download Neutron Clang (if not cached)
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ../toolchains/neutron-clang
+          cd ../toolchains/neutron-clang
+          curl -sSLo antman https://raw.githubusercontent.com/Neutron-Toolchains/neutron-clang/main/antman
+          chmod +x antman
+          ./antman -S=latest --noconfirm
+
+      - name: Patch glibc for Neutron Clang
+        run: |
+          cd ../toolchains/neutron-clang
+          ./antman --patch=glibc || true
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ../ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
+
+      - name: Setup AnyKernel3
+        run: |
+          git clone https://github.com/osm0sis/AnyKernel3.git ../AnyKernel3
+
+      - name: Build Kernel
+        run: |
+          export CCACHE_DIR="$PWD/../ccache/.kernel-bpf"
+          ccache -M 5G
+          ./compile.sh alioth neutron
+
+      - name: Upload Kernel Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: E404-alioth-Kernel
+          path: out/*.zip

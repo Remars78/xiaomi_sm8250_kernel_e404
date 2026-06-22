@@ -33,15 +33,16 @@ AK3_DIR="$BASE_DIR/AnyKernel3"
 [[ ! -d "$AK3_DIR" ]] && echo "--- ! Failed to find AnyKernel3 at $AK3_DIR ! ---" && exit 1
 
 # Telegram API setup
+TELEGRAM_ENABLED=1
 TELEGRAM_CONFIG="$BASE_DIR/telegram_api"
 if [[ ! -f "$TELEGRAM_CONFIG" ]]; then
-    echo "--- ! Failed to find Telegram API config at $TELEGRAM_CONFIG ! ---"
-    exit 1
+    echo "--- Telegram API config not found, Telegram integration disabled ---"
+    TELEGRAM_ENABLED=0
 else
     source "$TELEGRAM_CONFIG"
     if [[ -z "$BOT_TOKEN" || -z "$GROUP_ID" || -z "$CHANNEL_ID" || -z "$PRIVATE_ID" ]]; then
-        echo "--- ! Failed to find Telegram required variables (BOT_TOKEN, GROUP_ID, CHANNEL_ID, PRIVATE_ID) ! ---"
-        exit 1
+        echo "--- Missing Telegram required variables, Telegram integration disabled ---"
+        TELEGRAM_ENABLED=0
     fi
 fi
 
@@ -54,13 +55,16 @@ for arg in "$@"; do
     esac
 done
 
-case "$MSGTARGET" in
-    channel) ID="$CHANNEL_ID" ;;
-    group)   ID="$GROUP_ID" ;;
-    *)       ID="$PRIVATE_ID" ;;
-esac
+if [[ $TELEGRAM_ENABLED -eq 1 ]]; then
+    case "$MSGTARGET" in
+        channel) ID="$CHANNEL_ID" ;;
+        group)   ID="$GROUP_ID" ;;
+        *)       ID="$PRIVATE_ID" ;;
+    esac
+fi
 
 send_msg() {
+    [[ $TELEGRAM_ENABLED -eq 0 ]] && return
     curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
         -d chat_id="$ID" \
         -d text="$1" \
@@ -68,12 +72,14 @@ send_msg() {
 }
 
 send_file() {
+    [[ $TELEGRAM_ENABLED -eq 0 ]] && return
     curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendDocument" \
         -F chat_id="$ID" \
         -F document=@"$1" >/dev/null
 }
 
 send_changelog() {
+    [[ $TELEGRAM_ENABLED -eq 0 ]] && return
     local FILE="$1"
 
     if [[ ! -f "$FILE" ]]; then
@@ -102,34 +108,16 @@ ZIPS=()
 # Device map
 if [[ "$*" == *gcc* ]]; then
     declare -A DEVICE_MAP=(
-        ["munch"]="MUNCH:vendor/munch_gcc_defconfig"
         ["alioth"]="ALIOTH:vendor/alioth_gcc_defconfig"
-        ["apollo"]="APOLLO:vendor/apollo_gcc_defconfig"
-        ["pipa"]="PIPA:vendor/pipa_gcc_defconfig"
-        ["lmi"]="LMI:vendor/lmi_gcc_defconfig"
-        ["umi"]="UMI:vendor/umi_gcc_defconfig"
-        ["cmi"]="CMI:vendor/cmi_gcc_defconfig"
-        ["cas"]="CAS:vendor/cas_gcc_defconfig"
     )
 else
     declare -A DEVICE_MAP=(
-        ["munch"]="MUNCH:vendor/munch_defconfig"
         ["alioth"]="ALIOTH:vendor/alioth_defconfig"
-        ["apollo"]="APOLLO:vendor/apollo_defconfig"
-        ["pipa"]="PIPA:vendor/pipa_defconfig"
-        ["lmi"]="LMI:vendor/lmi_defconfig"
-        ["umi"]="UMI:vendor/umi_defconfig"
-        ["cmi"]="CMI:vendor/cmi_defconfig"
-        ["cas"]="CAS:vendor/cas_defconfig"
     )
 fi
 
 declare -A DEVICE_NAME_MAP=(
-    ["munch"]="POCO_F4"
     ["alioth"]="POCO_F3"
-    ["apollo"]="MI_10T"
-    ["lmi"]="POCO_F2"
-    ["pipa"]="MI_PAD6"
 )
 
 # Toolchain selection
