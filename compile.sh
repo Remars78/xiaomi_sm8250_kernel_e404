@@ -201,6 +201,9 @@ build_device() {
 
     make O=out "$DEFCONFIG" 2>&1 | tee -a "$LOG_FILE"
 
+    echo "--- Verifying kallsyms-related config in .config ---"
+    grep -E "CONFIG_KALLSYMS_BASE_RELATIVE|CONFIG_STRIP_ASM_SYMS|CONFIG_DEBUG_KERNEL" out/.config || true
+
     compilebuild
 
     [[ -f "$K_IMG" && -f "$K_DTBO" && -f "$K_DTB" ]] || return 1
